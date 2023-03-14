@@ -1,6 +1,3 @@
-topdir = ../petsc/arch-sfpn/externalpackages/MUMPS_5.5.1
-libdir = $(topdir)/lib
-
 include Makefile.inc
 
 LIBSMUMPS = -L$(libdir) -lsmumps$(PLAT) -lmumps_common$(PLAT)
