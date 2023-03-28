@@ -4,7 +4,7 @@ LIBSMUMPS = -L$(libdir) -lsmumps$(PLAT) -lmumps_common$(PLAT)
 LIBDMUMPS = -L$(libdir) -ldmumps$(PLAT) -lmumps_common$(PLAT)
 LIBCMUMPS = -L$(libdir) -lcmumps$(PLAT) -lmumps_common$(PLAT)
 LIBZMUMPS = -L$(libdir) -lzmumps$(PLAT) -lmumps_common$(PLAT)
-PROGRAMS = matrix_poisson c_example
+PROGRAMS = mumps_test
 
 all : $(PROGRAMS)
 .SECONDEXPANSION:
@@ -18,20 +18,17 @@ all : $(PROGRAMS)
 # .c.o:
 # 	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 
-matrix_poisson: $$@.o
-	$(CC) -o $@ $(OPTL) $@.o $(LIBDMUMPS) $(LORDERINGS) $(LIBS) $(LIBBLAS) $(LIBOTHERS)
 
-c_example: $$@.o
-	$(CC) -o $@ $(OPTL) $@.o $(LIBDMUMPS) $(LORDERINGS) $(LIBS) $(LIBBLAS) $(LIBOTHERS)
+mumps_test: mumps_test.o matrix_loader.o 
+	$(CC) -o $@ $(OPTL)  mumps_test.o matrix_loader.o $(LIBDMUMPS) $(LORDERINGS) $(LIBS) $(LIBBLAS) $(LIBOTHERS)
 
-# .SUFFIXES: .o .c
-# 	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 
-matrix_poisson.o : 
+mumps_test.o : 
+	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
+	
+matrix_loader.o : 
 	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 
-c_example.o : 
-	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 
 clean : 
 	$(RM) *.o $(PROGRAMS)
