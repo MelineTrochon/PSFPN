@@ -1,12 +1,9 @@
-
 /*
  *
  *  This file is part of MUMPS 5.5.1, released
  *  on Tue Jul 12 13:17:24 UTC 2022
  *
  */
-
-
 
 /*phase: 
 	job = 1 analisys : prepare for the factorization (matrix format, ICNTL 5)
@@ -113,13 +110,14 @@ int main(int argc, char ** argv)
   MUMPS_INT8 nnz;
   get_size(&n, &nnz, filename); 
   printf("the matrix is %d x %d with %d nonzero elements\n", n, n, nnz);
-  MUMPS_INT irn[nnz];
-  MUMPS_INT jcn[nnz];
-  double a[nnz];
+  MUMPS_INT* irn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
+  // printf("apres irn\n");
+  MUMPS_INT* jcn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
+  double* a = (double *) malloc(nnz * sizeof(double));
   
   
   
-  double rhs[n];
+  double* rhs = (double *) malloc(nnz * sizeof(double));
 
 
   int myid, ierr;
@@ -155,7 +153,8 @@ int main(int argc, char ** argv)
 
   id.ICNTL(1)=-1;  //output for error message
   id.ICNTL(2)=5; //output stream for diagnostic printing and statistics local to each MPI process?
-  id.ICNTL(3)=-1; id.ICNTL(4)=0; id.ICNTL(11)=1;
+  // id.ICNTL(3)=-1; id.ICNTL(4)=0; id.ICNTL(11)=1;
+  
   /* Call the MUMPS package (analyse, factorization and solve). */
   // id.job=1;
   // dmumps_c(&id);

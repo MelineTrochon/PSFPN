@@ -17,7 +17,7 @@ void get_size(MUMPS_INT *n, MUMPS_INT8 *nnz, char *filename){
     	
     	while (fgets(str, 256, f) != NULL) {
         	if (str[0] != '%'){
-        		e = sscanf(str, "%d %d %ld \n", n, &m, nnz);
+        		e = sscanf(str, "%d %d %lld \n", n, &m, nnz);
         		break;
         	}
     	}
@@ -45,11 +45,11 @@ void LoadMatrix(MUMPS_INT n, MUMPS_INT8 nnz, MUMPS_INT *irn, MUMPS_INT *jcn, dou
 	
 	while (fgets(str, 256, f) != NULL) {
 		
-        	if (str[0] != '%'){
-        		e = sscanf(str, "%d %d %ld \n", &n_, &m, &nnz_);
-        		break;
-        	}
-    	}
+		if (str[0] != '%'){
+			e = sscanf(str, "%d %d %lld \n", &n_, &m, &nnz_);
+			break;
+		}
+	}
 	
 	
 	if (n_!=n || nnz_ != nnz){
@@ -63,6 +63,38 @@ void LoadMatrix(MUMPS_INT n, MUMPS_INT8 nnz, MUMPS_INT *irn, MUMPS_INT *jcn, dou
 		irn[i] = r;
 		jcn[i] = c;
 		a[i] = v;
+		
+	}
+	
+	fclose(f);
+	
+	return ;
+}
+
+void LoadRhs(MUMPS_INT n, double *rhs, char *filename){
+	int e;
+	FILE *f = fopen(filename, "r");
+	char str[256];
+	
+	if ( f == NULL ) {
+        	printf( "Cannot open file %s\n", filename );
+        	exit(1);
+    	}
+
+	double v;
+		
+	while (fgets(str, 256, f) != NULL) {
+		
+		if (str[0] != '%'){
+			e = sscanf(str, "%lf \n", &v);
+			rhs[0] = v;
+			break;
+		}
+    }
+	
+	for (int i = 1; i< n; i++){
+		e = fscanf(f, "%lf \n", &v);
+		rhs[i] = v;
 		
 	}
 	

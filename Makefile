@@ -22,11 +22,17 @@ all : $(PROGRAMS)
 mumps_test: mumps_test.o matrix_loader.o 
 	$(CC) -o $@ $(OPTL)  mumps_test.o matrix_loader.o $(LIBDMUMPS) $(LORDERINGS) $(LIBS) $(LIBBLAS) $(LIBOTHERS)
 
+c_example: $$@.o
+	$(CC) -o $@ $(OPTL) $@.o $(LIBDMUMPS) $(LORDERINGS) $(LIBS) $(LIBBLAS) $(LIBOTHERS)
+
 
 mumps_test.o : 
 	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 	
 matrix_loader.o : 
+	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
+
+c_example.o : 
 	$(CC) $(OPTC) $(CDEFS) -I. -I$(topdir)/include -I$(topdir)/src $(INCS) -c $*.c $(OUTC)$*.o
 
 
