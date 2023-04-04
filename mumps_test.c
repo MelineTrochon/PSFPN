@@ -17,11 +17,11 @@ void LoadRhs(MUMPS_INT, double *, char *);
 int main(int argc, char ** argv)
 {
 
-   if (argc != 3){
+   if (argc < 2){
 	   printf("error: arguments  ");
    }
    
-   
+  
   char* filename_matrix = argv[1];
   char* filename_rhs = argv[2];
   DMUMPS_STRUC_C id;
@@ -42,13 +42,13 @@ int main(int argc, char ** argv)
 
   /* Define A and rhs */
   LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
-  LoadRhs(n, rhs, filename_rhs);
   
-
-  for (int i = 0; i < n; i++){
-    if (rhs[i] != 0) printf("oui\n");
+  if (argc >= 3) LoadRhs(n, rhs, filename_rhs);
+  else {
+    for (int i = 0; i < n; i++){
+      rhs[i] = 1;
+    }
   }
-  
     // for (int i = 0; i < nnz; i++){
 		// printf("i = %d, IRN = %d, JCN = %d, A = %f\n", i, irn[i], jcn[i], a[i]);
 	// }
@@ -75,12 +75,11 @@ int main(int argc, char ** argv)
   // dmumps_c(&id);
   id.job=6;
   dmumps_c(&id);
-  // if (id.infog[0]<0) {
-  //   printf(" (PROC %d) ERROR RETURN: \tINFOG(1)= %d\n\t\t\t\tINFOG(2)= %d\n",
-  //       myid, id.infog[0], id.infog[1]);
-  //   error = 1;
-  // }
-	
+  if (id.infog[0]<0) {
+    printf(" (PROC %d) ERROR RETURN: \tINFOG(1)= %d\n\t\t\t\tINFOG(2)= %d\n",
+        myid, id.infog[0], id.infog[1]);
+    error = 1;
+  }
 
   /* Terminate instance. */
   id.job=JOB_END;
@@ -96,6 +95,7 @@ int main(int argc, char ** argv)
   //     printf("An error has occured, please check error code returned by MUMPS.\n");
   //   }
   // }
+  
   
   ierr = MPI_Finalize();
   return 0;
