@@ -14,8 +14,12 @@ void LoadMatrix(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, double *, char 
 
 void LoadRhs(MUMPS_INT, double *, char *);
 
-int main(int argc, char ** argv)
-{
+
+double residual(int , MUMPS_INT8, double*, MUMPS_INT *, MUMPS_INT *, double*, double*);
+
+
+ 
+int main(int argc, char ** argv){
 
    if (argc < 2){
 	   printf("error: arguments  ");
@@ -32,7 +36,7 @@ int main(int argc, char ** argv)
   MUMPS_INT* irn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
   MUMPS_INT* jcn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
   double* a = (double *) malloc(nnz * sizeof(double));
-  double* rhs = (double *) malloc(nnz * sizeof(double));
+  double* rhs = (double *) malloc(n * sizeof(double));
 
   int myid, ierr;
   int error = 0;
@@ -43,6 +47,8 @@ int main(int argc, char ** argv)
   /* Define A and rhs */
   LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
   
+  
+  
   if (argc >= 3) LoadRhs(n, rhs, filename_rhs);
   else {
     for (int i = 0; i < n; i++){
@@ -52,10 +58,16 @@ int main(int argc, char ** argv)
     // for (int i = 0; i < nnz; i++){
 		// printf("i = %d, IRN = %d, JCN = %d, A = %f\n", i, irn[i], jcn[i], a[i]);
 	// }
+	  double* rhs_ = (double *) malloc(n * sizeof(double));
+	memcpy(rhs_, rhs, n*sizeof(double));
+	
+	 // for (int i = 0; i < n; i++){
+		// printf("i = %d,  rhs = %f, rhs_ = %f\n", i, rhs[i], rhs_[i]);
+	// }
 
   /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
   id.comm_fortran=USE_COMM_WORLD; 
-  id.par=1; id.sym=1;
+  id.par=1; id.sym=0;
   id.job=JOB_INIT;
   dmumps_c(&id);
 
@@ -69,10 +81,10 @@ int main(int argc, char ** argv)
 
   
   /* Call the MUMPS package (analyse, factorization and solve). */
-  // id.job=1;
-  // dmumps_c(&id);
-  // id.job=2;
-  // dmumps_c(&id);
+  id.job=1;
+  dmumps_c(&id);
+  id.job=2;
+  dmumps_c(&id);
   id.job=6;
   dmumps_c(&id);
   if (id.infog[0]<0) {
@@ -85,19 +97,20 @@ int main(int argc, char ** argv)
   id.job=JOB_END;
   dmumps_c(&id);
   // if (myid == 0) {
-  //   if (!error) {
-	//   printf("Solution is :(");
-	//   for (int i = 0; i< n; i++){
-	// 	printf("%8.2f  \t", rhs[i]);
-	//   }
-	//   printf(")\n");
-  //   } else {
-  //     printf("An error has occured, please check error code returned by MUMPS.\n");
-  //   }
-  // }
-  
-  
-  ierr = MPI_Finalize();
+    // if (!error) {
+	  // printf("Solution is :(");
+	  // for (int i = 0; i< n; i++){
+		// printf("%8.2f  \t", rhs[i]);
+	  // }
+	  // printf(")\n");
+    // } else {
+      // printf("An error has occured, please check error code returned by MUMPS.\n");
+    // }
+	
+	double r = residual(n , nnz, rhs_, irn, jcn, a ,rhs);
+	
+	printf("the residual is %e \n", r);
+	ierr = MPI_Finalize();
   return 0;
 }
 	
