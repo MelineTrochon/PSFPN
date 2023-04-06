@@ -8,39 +8,29 @@
 #define JOB_END -2
 #define USE_COMM_WORLD -987654
 
-
-
-
-
-
-
-
-
-
 double residual(int n, int nnz, double *rhs, MUMPS_INT *irn, MUMPS_INT *jcn, double *a, double *solution){
 	//compute the residual Ax - b
 	double r = .0;
-	double *rhs_= calloc(n,sizeof(double));
+	double norm_A = 0.;
+	double norm_x = 0.;
+	double *rhs_= (double *)calloc(n,sizeof(double));
 	
 	for (int i = 0; i< nnz; i ++){
 		rhs_[irn[i]] += a[i]*solution[jcn[i]];
+		norm_A += fabs(a[i]);
 	}
 	
 		// printf("r = %e\n", r)	;
 	for (int i = 0; i<n; i++){
 		r = r + fabs(rhs[i] - rhs_[i]);
+		norm_x +=fabs(solution[i]);
 		// printf("r = %e\n", r)	;
 	}
-	// free(rhs_);
-	printf("r = %e\n", r)	;
-	return r;
+	free(rhs_);
+	printf("residual = %e, ||A|| = %e, ||x|| = %e\n", r, norm_A, norm_x);
+	return r / (norm_x * norm_A);
 }
-	
-		
-			
-			
-			
-			
+
 // double* mumps_solver(char* filename_matrix, char* filename_rhs){
 	 // DMUMPS_STRUC_C id;
 	  // MUMPS_INT n;

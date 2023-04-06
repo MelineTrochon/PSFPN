@@ -14,11 +14,9 @@ void LoadMatrix(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, double *, char 
 
 void LoadRhs(MUMPS_INT, double *, char *);
 
-
 double residual(int , MUMPS_INT8, double*, MUMPS_INT *, MUMPS_INT *, double*, double*);
 
 
- 
 int main(int argc, char ** argv){
 
    if (argc < 2){
@@ -47,8 +45,6 @@ int main(int argc, char ** argv){
   /* Define A and rhs */
   LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
   
-  
-  
   if (argc >= 3) LoadRhs(n, rhs, filename_rhs);
   else {
     for (int i = 0; i < n; i++){
@@ -58,11 +54,11 @@ int main(int argc, char ** argv){
     // for (int i = 0; i < nnz; i++){
 		// printf("i = %d, IRN = %d, JCN = %d, A = %f\n", i, irn[i], jcn[i], a[i]);
 	// }
-	  double* rhs_ = (double *) malloc(n * sizeof(double));
-	memcpy(rhs_, rhs, n*sizeof(double));
+	  double* _rhs = (double *) malloc(n * sizeof(double));
+	  memcpy(_rhs, rhs, n*sizeof(double));
 	
 	 // for (int i = 0; i < n; i++){
-		// printf("i = %d,  rhs = %f, rhs_ = %f\n", i, rhs[i], rhs_[i]);
+		// printf("i = %d,  rhs = %f, _rhs = %f\n", i, rhs[i], _rhs[i]);
 	// }
 
   /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
@@ -77,14 +73,11 @@ int main(int argc, char ** argv){
     id.a = a; id.rhs = rhs;
   }
 
-#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+  #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+  id.ICNTL(11) = 2;
 
   
   /* Call the MUMPS package (analyse, factorization and solve). */
-  id.job=1;
-  dmumps_c(&id);
-  id.job=2;
-  dmumps_c(&id);
   id.job=6;
   dmumps_c(&id);
   if (id.infog[0]<0) {
@@ -107,11 +100,15 @@ int main(int argc, char ** argv){
       // printf("An error has occured, please check error code returned by MUMPS.\n");
     // }
 	
-	double r = residual(n , nnz, rhs_, irn, jcn, a ,rhs);
+	double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
 	
+  free(irn);
+  free(jcn);
+  free(a);
+  free(rhs);
+  free(_rhs);
+
 	printf("the residual is %e \n", r);
 	ierr = MPI_Finalize();
   return 0;
 }
-	
-	
