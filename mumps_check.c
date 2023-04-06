@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include "mpi.h"
 #include "dmumps_c.h"
 #define JOB_INIT -1
@@ -13,10 +14,14 @@ double residual(int n, int nnz, double *rhs, MUMPS_INT *irn, MUMPS_INT *jcn, dou
 	double r = .0;
 	double norm_A = 0.;
 	double norm_x = 0.;
-	double *rhs_= (double *)calloc(n,sizeof(double));
+	double *rhs_= (double *)malloc(n*sizeof(double));
+	
+	for (int i = 0; i<n; i++){
+		rhs_[i] = 0.0;
+	}
 	
 	for (int i = 0; i< nnz; i ++){
-		rhs_[irn[i]] += a[i]*solution[jcn[i]];
+		rhs_[irn[i]-1] += a[i]*solution[jcn[i]-1];
 		norm_A += fabs(a[i]);
 	}
 	
