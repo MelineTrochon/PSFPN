@@ -102,3 +102,48 @@ void LoadRhs(MUMPS_INT n, double *rhs, char *filename){
 	
 	return ;
 }
+
+void LoadMatrix_sym(MUMPS_INT n, MUMPS_INT8 nnz, MUMPS_INT *irn, MUMPS_INT *jcn, double *a, char *filename){
+	int e, m;
+	FILE *f = fopen(filename, "r");
+	char str[256];
+	
+	if ( f == NULL ) {
+        	printf( "Cannot open file %s\n", filename );
+        	exit( 0 );
+    	}
+    	MUMPS_INT n_; MUMPS_INT8 nnz_;
+    	
+	int r, c;
+	double v;
+	
+	
+	
+	while (fgets(str, 256, f) != NULL) {
+		
+		if (str[0] != '%'){
+			e = sscanf(str, "%d %d %lld \n", &n_, &m, &nnz_);
+			break;
+		}
+	}
+	
+	
+	if (n_!=n || nnz_ != nnz){
+		printf(" Cannot load the matrix, wrong size\n");
+		exit(0);
+	}	
+	
+	
+	for (int i = 0; i< nnz; i++){
+		e = fscanf(f, "%d %d %lf \n", &r, &c, &v);
+		if ( r <= c) {
+			irn[i] = r;
+			jcn[i] = c;
+			a[i] = v;
+		}
+	}
+	
+	fclose(f);
+	
+	return ;
+}
