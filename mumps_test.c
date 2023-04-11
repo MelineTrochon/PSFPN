@@ -75,6 +75,8 @@ int main(int argc, char ** argv){
 
   #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
   id.ICNTL(11) = 2;
+  // id.ICNTL(7) = 0;
+  // id.ICNTL(8) = 8;
 
   
   /* Call the MUMPS package (analyse, factorization and solve). */
@@ -85,6 +87,7 @@ int main(int argc, char ** argv){
         myid, id.infog[0], id.infog[1]);
     error = 1;
   }
+  // printf("infog[7] = %d, infog[8] = %d\n",id.infog[6], id.infog[32]);
 
   /* Terminate instance. */
   id.job=JOB_END;
@@ -100,7 +103,6 @@ int main(int argc, char ** argv){
       // printf("An error has occured, please check error code returned by MUMPS.\n");
     // }
 	
-	double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
 	
   free(irn);
   free(jcn);
@@ -108,7 +110,8 @@ int main(int argc, char ** argv){
   free(rhs);
   free(_rhs);
 
-	printf("the residual is %e \n", r);
+	// double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
+	// printf("the residual is %e \n", r);
 	ierr = MPI_Finalize();
   return 0;
 }
