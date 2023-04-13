@@ -1,14 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 make clean
 make
 
 
-matrixfilename="Poisson_2D.m"
-rhsfilename="Poisson_2D_rhs.m"
+matrixfilename="dielFilterV2real/dielFilterV2real.mtx"
+rhsfilename="dielFilterV2real/dielFilterV2real_b.mtx"
+outputfilename="result_dielFilter.txt"
 
 
-echo $matrixfilename
-for ICNTL7 in 1 2 3
+#echo $matrixfilename
+for ICNTL7 in 0 2 6 7
 do
-	./mumps_test $matrixfilename $rhsfilename
+	./mumps_test $matrixfilename $rhsfilename $outputfilename $ICNTL7
 done

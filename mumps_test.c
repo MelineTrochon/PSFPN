@@ -75,18 +75,25 @@ int main(int argc, char ** argv){
 
   #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
   id.ICNTL(11) = 2;
-  // id.ICNTL(7) = 0;
+  id.ICNTL(7) = atoi(argv[4]);
   // id.ICNTL(8) = 8;
 
   
   /* Call the MUMPS package (analyse, factorization and solve). */
   id.job=6;
   dmumps_c(&id);
+
+  
+
   if (id.infog[0]<0) {
     printf(" (PROC %d) ERROR RETURN: \tINFOG(1)= %d\n\t\t\t\tINFOG(2)= %d\n",
         myid, id.infog[0], id.infog[1]);
     error = 1;
   }
+
+  FILE * f = fopen(argv[3], "a");
+  fprintf(f, "ICNTL(7) = %d : %f\t %f\n", id.ICNTL(7), id.rinfog[1], id.rinfog[2]);
+  fclose(f);
   // printf("infog[7] = %d, infog[8] = %d\n",id.infog[6], id.infog[32]);
 
   /* Terminate instance. */
