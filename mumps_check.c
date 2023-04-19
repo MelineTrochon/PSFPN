@@ -12,28 +12,36 @@
 double residual(int n, int nnz, double *rhs, MUMPS_INT *irn, MUMPS_INT *jcn, double *a, double *solution){
 	//compute the residual Ax - b
 	double r = .0;
-	double norm_A = 0.;
+	double* norm_A = (double *)malloc(n*sizeof(double));
+	double norm_inf_A = 0.0;
 	double norm_x = 0.;
 	double *rhs_= (double *)malloc(n*sizeof(double));
-	
+	printf("avant\n");
 	for (int i = 0; i<n; i++){
 		rhs_[i] = 0.0;
+		norm_A[i] = 0.0;
 	}
-	
+	printf("pendant1\n");
 	for (int i = 0; i< nnz; i ++){
-		rhs_[irn[i]-1] += a[i]*solution[jcn[i]-1];
-		norm_A += fabs(a[i]);
+		// printf("c con %d\n", irn[i]);
+		rhs_[irn[i]-1] += a[i]*solution[jcn[i]];
+		norm_A[irn[i] - 1] += fabs(a[i]);
 	}
-	
+	printf("pendant2\n");
 		// printf("r = %e\n", r)	;
 	for (int i = 0; i<n; i++){
-		r = r + fabs(rhs[i] - rhs_[i]);
-		norm_x +=fabs(solution[i]);
+		// r = r + fabs(rhs[i] - rhs_[i]);
+		double ri = fabs(rhs[i] - rhs_[i]);
+		if (ri > r) r = ri;
+		// norm_x +=fabs(solution[i]);
+		double xi = fabs(solution[i]);
+		if (xi > norm_x) norm_x = xi;
 		// printf("r = %e\n", r)	;
+		if (norm_inf_A < norm_A[i]) norm_inf_A = norm_A[i];
 	}
+	printf("residual = %e, ||A|| = %e, ||x|| = %e\n", r, norm_inf_A, norm_x);
 	free(rhs_);
-	printf("residual = %e, ||A|| = %e, ||x|| = %e\n", r, norm_A, norm_x);
-	return r / (norm_x * norm_A);
+	return r / (norm_x * norm_inf_A);
 }
 
 // double* mumps_solver(char* filename_matrix, char* filename_rhs){

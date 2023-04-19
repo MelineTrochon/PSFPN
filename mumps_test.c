@@ -3,6 +3,7 @@
 #include <string.h>
 #include "mpi.h"
 #include "dmumps_c.h"
+#include <time.h>
 #define JOB_INIT -1
 #define JOB_END -2
 #define USE_COMM_WORLD -987654
@@ -19,8 +20,9 @@ double residual(int , MUMPS_INT8, double*, MUMPS_INT *, MUMPS_INT *, double*, do
 
 int main(int argc, char ** argv){
 
-   if (argc < 2){
-	   printf("error: arguments  ");
+   if (argc < 5){
+	   printf("error: nombre d'arguments\n");
+     exit(1);
    }
    
   
@@ -43,19 +45,22 @@ int main(int argc, char ** argv){
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
   /* Define A and rhs */
-  LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
+  if (argv[4] != 0) LoadMatrix_sym(n, nnz, irn, jcn, a, filename_matrix);
+  else LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
+
+  LoadRhs(n, rhs, filename_rhs);
+  // else {
+    // for (int i = 0; i < n; i++){
+    //   rhs[i] = 1;
+    // }
+  // }
   
-  if (argc >= 3) LoadRhs(n, rhs, filename_rhs);
-  else {
-    for (int i = 0; i < n; i++){
-      rhs[i] = 1;
-    }
-  }
     // for (int i = 0; i < nnz; i++){
 		// printf("i = %d, IRN = %d, JCN = %d, A = %f\n", i, irn[i], jcn[i], a[i]);
 	// }
-	  double* _rhs = (double *) malloc(n * sizeof(double));
-	  memcpy(_rhs, rhs, n*sizeof(double));
+
+  double* _rhs = (double *) malloc(n * sizeof(double));
+  memcpy(_rhs, rhs, n*sizeof(double));
 	
 	 // for (int i = 0; i < n; i++){
 		// printf("i = %d,  rhs = %f, _rhs = %f\n", i, rhs[i], _rhs[i]);
@@ -63,7 +68,7 @@ int main(int argc, char ** argv){
 
   /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
   id.comm_fortran=USE_COMM_WORLD; 
-  id.par=1; id.sym=0;
+  id.par=1; id.sym=2;
   id.job=JOB_INIT;
   dmumps_c(&id);
 
@@ -80,10 +85,23 @@ int main(int argc, char ** argv){
 
   
   /* Call the MUMPS package (analyse, factorization and solve). */
-  id.job=6;
+  id.job=1;
+  time_t deb = time(NULL);
   dmumps_c(&id);
+  time_t fin = time(NULL);
+  unsigned long t_analysis = difftime(fin, deb);
 
-  
+  id.job=2;
+  deb = time(NULL);
+  dmumps_c(&id);
+  fin = time(NULL);
+  unsigned long t_factorisation = difftime(fin, deb);
+
+  id.job=3;
+  deb = time(NULL);
+  dmumps_c(&id);
+  fin = time(NULL);
+  unsigned long t_check = difftime(fin, deb);
 
   if (id.infog[0]<0) {
     printf(" (PROC %d) ERROR RETURN: \tINFOG(1)= %d\n\t\t\t\tINFOG(2)= %d\n",
@@ -92,7 +110,7 @@ int main(int argc, char ** argv){
   }
 
   FILE * f = fopen(argv[3], "a");
-  fprintf(f, "ICNTL(7) = %d : %f\t %f\n", id.ICNTL(7), id.rinfog[1], id.rinfog[2]);
+  fprintf(f, "%d : %ld\t%ld\t%ld\n", id.ICNTL(7), t_analysis, t_factorisation, t_check);
   fclose(f);
   // printf("infog[7] = %d, infog[8] = %d\n",id.infog[6], id.infog[32]);
 
