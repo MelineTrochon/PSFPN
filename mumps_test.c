@@ -44,8 +44,9 @@ int main(int argc, char ** argv){
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
+  int sym = atoi(argv[4]);
   /* Define A and rhs */
-  if (argv[4] != 0) LoadMatrix_sym(n, nnz, irn, jcn, a, filename_matrix);
+  if (sym != 0) LoadMatrix_sym(n, nnz, irn, jcn, a, filename_matrix);
   else LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
 
   LoadRhs(n, rhs, filename_rhs);
@@ -68,7 +69,7 @@ int main(int argc, char ** argv){
 
   /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
   id.comm_fortran=USE_COMM_WORLD; 
-  id.par=1; id.sym=2;
+  id.par=1; id.sym=sym;
   id.job=JOB_INIT;
   dmumps_c(&id);
 
@@ -80,7 +81,7 @@ int main(int argc, char ** argv){
 
   #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
   id.ICNTL(11) = 2;
-  id.ICNTL(7) = atoi(argv[4]);
+  id.ICNTL(7) = atoi(argv[5]);
   // id.ICNTL(8) = 8;
 
   
@@ -128,6 +129,8 @@ int main(int argc, char ** argv){
       // printf("An error has occured, please check error code returned by MUMPS.\n");
     // }
 	
+	// double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
+	// printf("the residual is %e \n", r);
 	
   free(irn);
   free(jcn);
@@ -135,8 +138,6 @@ int main(int argc, char ** argv){
   free(rhs);
   free(_rhs);
 
-	// double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
-	// printf("the residual is %e \n", r);
 	ierr = MPI_Finalize();
   return 0;
 }

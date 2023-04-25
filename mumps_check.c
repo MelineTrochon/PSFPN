@@ -23,7 +23,7 @@ double residual(int n, int nnz, double *rhs, MUMPS_INT *irn, MUMPS_INT *jcn, dou
 	}
 	printf("pendant1\n");
 	for (int i = 0; i< nnz; i ++){
-		// printf("c con %d\n", irn[i]);
+		// printf("%d\n", irn[i]);
 		rhs_[irn[i]-1] += a[i]*solution[jcn[i]];
 		norm_A[irn[i] - 1] += fabs(a[i]);
 	}
