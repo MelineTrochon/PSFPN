@@ -11,17 +11,28 @@
 
 void get_size(MUMPS_INT *, MUMPS_INT8 *, char *);
 
-void LoadMatrix_float(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, float *, char *);
+void LoadMatrix(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, double *, char *);
 
-void LoadRhs_float(MUMPS_INT, float *, char *);
+void LoadRhs(MUMPS_INT, double *, char *);
 
 double residual(int , MUMPS_INT8, double*, MUMPS_INT *, MUMPS_INT *, double*, double*);
 
+void toFloat(int size, double* arr, float* arr_float) {
+  for (int i=0; i<size; i++) {
+    arr_float[i] = (float) arr[i];
+  }
+}
+
+void toDouble(int size, float* arr, double* arr_double) {
+  for (int i=0; i<size; i++) {
+    arr_double[i] = (double) arr[i];
+  }
+}
 
 int main(int argc, char ** argv){
 
    if (argc < 5){
-	   printf("error: nombre d'arguments\n");
+	   printf("error: nombre d'arguments incorrect\n");
      exit(1);
    }
   
@@ -31,41 +42,28 @@ int main(int argc, char ** argv){
   MUMPS_INT n;
   MUMPS_INT8 nnz;
   get_size(&n, &nnz, filename_matrix); 
-  printf("the matrix is %d x %d with %lld nonzero elements\n", n, n, nnz);
+  printf("The matrix is %d x %d with %lld nonzero elements\n", n, n, nnz);
+
   MUMPS_INT* irn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
   MUMPS_INT* jcn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
-  float* a = (float *) malloc(nnz * sizeof(float));
-  float* rhs = (float *) malloc(n * sizeof(float));
+  double* a = (double *) malloc(nnz * sizeof(double));
+  double* rhs = (double *) malloc(n * sizeof(double));
 
   int myid, ierr;
   int error = 0;
-
   ierr = MPI_Init(&argc, &argv);
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
 
   int sym = atoi(argv[4]);
-  // printf("symmetry : %d\n", sym);
   /* Define A and rhs */
-  if (sym != 0) LoadMatrix_sym_float(n, nnz, irn, jcn, a, filename_matrix);
-  else LoadMatrix_float(n, nnz, irn, jcn, a, filename_matrix);
+  if (sym != 0) LoadMatrix_sym(n, nnz, irn, jcn, a, filename_matrix);
+  else LoadMatrix(n, nnz, irn, jcn, a, filename_matrix);
   
-  LoadRhs_float(n, rhs, filename_rhs);
-  // else {
-    // for (int i = 0; i < n; i++){
-    //   rhs[i] = 1;
-    // }
-  // }
-  
-    // for (int i = 0; i < nnz; i++){
-		// printf("i = %d, IRN = %d, JCN = %d, A = %f\n", i, irn[i], jcn[i], a[i]);
-	// }
+  LoadRhs(n, rhs, filename_rhs);
 
-  float* _rhs = (float *) malloc(n * sizeof(float));
-  memcpy(_rhs, rhs, n*sizeof(float));
-	
-	 // for (int i = 0; i < n; i++){
-		// printf("i = %d,  rhs = %f, _rhs = %f\n", i, rhs[i], _rhs[i]);
-	// }
+
+  double* _rhs = (double *) malloc(n * sizeof(double));
+  memcpy(_rhs, rhs, n*sizeof(double));
 
   /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
   id.comm_fortran=USE_COMM_WORLD; 
@@ -73,20 +71,26 @@ int main(int argc, char ** argv){
   id.job=JOB_INIT;
   smumps_c(&id);
 
-  // float* a2 = (float*) a;
-  // float* rhs2 = (float*) rhs;
+  float* a_float = (float *) malloc(nnz * sizeof(float));
+  float* rhs_float = (float *) malloc(n * sizeof(float));
+  toFloat(nnz, a, a_float);
+  toFloat(n, rhs, rhs_float);
+
   /* Define the problem on the host */
   if (myid == 0) {
     id.n = n; id.nnz =nnz; id.irn=irn; id.jcn=jcn;
-    id.a = a; id.rhs = rhs;
+    id.a = a_float; id.rhs = rhs_float;
   }
 
   #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-  id.ICNTL(11) = 2;
-  id.ICNTL(7) = atoi(argv[5]);
-  // id.ICNTL(8) = 8;
+  #define INFOG(I) infog[(I)-1]
+  #define RINFOG(I) rinfog[(I)-1]
 
-  
+  id.ICNTL(11) = 2;
+  for (int i = 5; i < argc; i+=2) {
+    id.ICNTL(atoi(argv[i])) = atoi(argv[i+1]);
+  }
+
   /* Call the MUMPS package (analyse, factorization and solve). */
   id.job=1;
   time_t deb = time(NULL);
@@ -112,25 +116,19 @@ int main(int argc, char ** argv){
     error = 1;
   }
 
+  toDouble(n, rhs_float, rhs);
+  double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
   FILE * f = fopen(argv[3], "a");
-  fprintf(f, "%d : %ld\t%ld\t%ld\n", id.ICNTL(7), t_analysis, t_factorisation, t_check);
+  fprintf(f, "%ld\t%ld\t%ld\t%e\t", t_analysis, t_factorisation, t_check, r);
+  for (int i = 0; i < 17; i++) { fprintf(f, "%e\t", id.rinfog[i]); }
+  fprintf(f, "\n");
+  for (int i = 0; i < 40; i++) { fprintf(f, "%d\t", id.infog[i]); }
+  fprintf(f, "\n");
   fclose(f);
-  // printf("infog[7] = %d, infog[8] = %d\n",id.infog[6], id.infog[32]);
 
   /* Terminate instance. */
   id.job=JOB_END;
   smumps_c(&id);
-  // if (myid == 0) {
-    // if (!error) {
-	  // printf("Solution is :(");
-	  // for (int i = 0; i< n; i++){
-		// printf("%8.2f  \t", rhs[i]);
-	  // }
-	  // printf(")\n");
-    // } else {
-      // printf("An error has occured, please check error code returned by MUMPS.\n");
-    // }
-	
 	
   free(irn);
   free(jcn);
@@ -138,8 +136,6 @@ int main(int argc, char ** argv){
   free(rhs);
   free(_rhs);
 
-	// double r = residual(n, nnz, _rhs, irn, jcn, a, rhs);
-	// printf("the residual is %e \n", r);
 	ierr = MPI_Finalize();
   return 0;
 }
