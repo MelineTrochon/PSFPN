@@ -13,6 +13,8 @@ void get_size(MUMPS_INT *, MUMPS_INT8 *, char *);
 
 void LoadMatrix(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, double *, char *);
 
+void LoadMatrix_sym(MUMPS_INT, MUMPS_INT8, MUMPS_INT *, MUMPS_INT *, double *, char *);
+
 void LoadRhs(MUMPS_INT, double *, char *);
 
 double residual(int , MUMPS_INT8, double*, MUMPS_INT *, MUMPS_INT *, double*, double*);
@@ -24,14 +26,14 @@ int main(int argc, char ** argv){
 	   printf("error: nombre d'arguments incorrect\n");
      exit(1);
    }
-  
+
   char* filename_matrix = argv[1];
   char* filename_rhs = argv[2];
   DMUMPS_STRUC_C id;
   MUMPS_INT n;
   MUMPS_INT8 nnz;
   get_size(&n, &nnz, filename_matrix); 
-  printf("The matrix is %d x %d with %lld nonzero elements\n", n, n, nnz);
+  printf("The matrix is %ld x %ld with %lld nonzero elements\n", n, n, nnz);
 
   MUMPS_INT* irn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
   MUMPS_INT* jcn = (MUMPS_INT *) malloc(nnz * sizeof(MUMPS_INT));
@@ -66,12 +68,23 @@ int main(int argc, char ** argv){
   }
 
   #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+  #define CNTL(I) cntl[(I)-1]
   #define INFOG(I) infog[(I)-1]
   #define RINFOG(I) rinfog[(I)-1]
 
   id.ICNTL(11) = 2;
-  for (int i = 5; i < argc; i+=2) {
+
+  int i = 5;
+  for ( ; i < argc; i+=2) {
+    if (strcmp(argv[i], "-c") == 0) {
+      i += 1;
+      break;
+    }
     id.ICNTL(atoi(argv[i])) = atoi(argv[i+1]);
+  }
+  
+  for ( ; i < argc; i+=2) {
+    id.CNTL(atoi(argv[i])) = atof(argv[i+1]);    
   }
   
   /* Call the MUMPS package (analyse, factorization and solve). */
